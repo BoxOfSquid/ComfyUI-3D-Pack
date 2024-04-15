@@ -8,6 +8,8 @@ from collections import OrderedDict
 import folder_paths as comfy_paths
 from omegaconf import OmegaConf
 import json
+import datetime
+from datetime import datetime
 
 import torch
 from torch.utils.data import DataLoader
@@ -235,14 +237,42 @@ class Load_3DGS:
             cstr(f"[{self.__class__.__name__}] File {gs_file_path} does not exist").error.print()
         return (gs_ply, )
     
-class Save_3D_Mesh:
+#class Save_3D_Mesh:
 
+#    @classmethod
+#    def INPUT_TYPES(cls):
+#        return {
+#            "required": {
+#                "mesh": ("MESH",),
+#                "save_path": ("STRING", {"default": 'Mesh_%Y-%m-%d-%M-%S-%f.obj', "multiline": False}),
+#            },
+#        }
+
+#    OUTPUT_NODE = True
+#    RETURN_TYPES = (
+#        "STRING",
+#    )
+#    RETURN_NAMES = (
+#        "save_path",
+#    )
+#    FUNCTION = "save_mesh"
+#    CATEGORY = "Comfy3D/Import|Export"
+    
+#    def save_mesh(self, mesh, save_path):
+#        save_path = parse_save_filename(save_path, comfy_paths.output_directory, SUPPORTED_3D_EXTENSIONS, self.__class__.__name__)
+#        
+#        if save_path is not None:
+#            mesh.write(save_path)
+
+#        return (save_path, )
+
+class Save_3D_Mesh:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
                 "mesh": ("MESH",),
-                "save_path": ("STRING", {"default": 'Mesh_%Y-%m-%d-%M-%S-%f.obj', "multiline": False}),
+                "save_directory": ("STRING", {"default": '', "multiline": False}),
             },
         }
 
@@ -255,15 +285,41 @@ class Save_3D_Mesh:
     )
     FUNCTION = "save_mesh"
     CATEGORY = "Comfy3D/Import|Export"
-    
-    def save_mesh(self, mesh, save_path):
-        save_path = parse_save_filename(save_path, comfy_paths.output_directory, SUPPORTED_3D_EXTENSIONS, self.__class__.__name__)
-        
-        if save_path is not None:
-            mesh.write(save_path)
 
-        return (save_path, )
-    
+    def save_mesh(self, mesh, save_directory):
+        # Get the path to the current script
+        script_path = os.path.dirname(__file__)
+        
+        # Construct the desired save location relative to the script location
+        desired_save_location = os.path.join(
+            script_path,
+            "..",
+            "..",
+            "output",
+            "CRMTest",
+            "OBJ"
+        )
+        
+        # Get the current date in the format "year-month-day"
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        
+        # Construct the folder path for the current date
+        date_folder = os.path.join(desired_save_location, current_date)
+        
+        # Create the folder if it doesn't exist
+        os.makedirs(date_folder, exist_ok=True)
+        
+        # Count the number of .obj files in the date folder
+        obj_file_count = len([name for name in os.listdir(date_folder) if name.endswith('.obj')])
+        
+        # Generate the new file name with numerical succession and the current date
+        new_file_name = os.path.join(date_folder, f"{obj_file_count + 1}-{current_date}.obj")
+        
+        # Save the mesh to the new file
+        mesh.write(new_file_name)
+        
+        return (new_file_name,)
+        
 class Save_3DGS:
 
     @classmethod
